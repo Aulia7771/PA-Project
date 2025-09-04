@@ -20,4 +20,4 @@ process.on('unhandledRejection', (err) => {
   process.exit(1);
 });
 
-init();dd
+init();
