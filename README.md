@@ -1,7 +1,7 @@
 # PA-Project
 
 ## 1. Deskripsi
-PA-Project adalah sebuah aplikasi backend berbasis **Hapi.js** yang terintegrasi dengan **PostgreSQL** untuk mengelola data pengguna dan keranjang belanja (shopping cart). Proyek ini dirancang dengan struktur modular (services, controllers, routes, validator, dll) sehingga mudah untuk dikembangkan dan dipelihara.  
+PA-Project adalah sebuah aplikasi backend berbasis **Hapi.js** yang terintegrasi dengan **PostgreSQL** untuk mengelola data pengguna dan keranjang belanja (shopping cart). Proyek ini dirancang dengan struktur modular (services, controllers, routes, dll) sehingga mudah untuk dikembangkan dan dipelihara.  
 
 ## 2. Tech Stack + Versi
 - **Node.js**: v18.x atau lebih baru  
