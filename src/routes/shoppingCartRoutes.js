@@ -1,33 +1,57 @@
-const db = require('../db');
-const ShoppingCartHandler = require("../handlers/shoppingCartHandler");
-const {
-  shoppingCartValidator,
-} = require("../validators/shoppingCartValidator");
+module.exports = (service) => {
+  const handler = require("../handlers/shoppingCartHandler")(service);
 
-module.exports = [
-  {
-    method: "GET",
-    path: "/shopping_cart",
-    options: {
-      auth: false,
+  return [
+    {
+      method: "GET",
+      path: "/shopping_cart",
+      handler: handler.getAll,
+      options: { auth: false }
     },
-    handler: async (request, h) => {
-      const res = await db.query("SELECT * FROM shopping_cart");
-      return res.rows;
+
+    {
+      method: "GET",
+      path: "/shopping_cart/{id}",
+      handler: handler.getById,
+      options: { auth: false }
     },
-  },
-  { method: "GET", path: "/cart/{id}", handler: ShoppingCartHandler.getById },
-  {
-    method: "POST",
-    path: "/cart",
-    options: { validate: shoppingCartValidator },
-    handler: ShoppingCartHandler.create,
-  },
-  {
-    method: "PUT",
-    path: "/cart/{id}",
-    options: { validate: shoppingCartValidator },
-    handler: ShoppingCartHandler.update,
-  },
-  { method: "DELETE", path: "/cart/{id}", handler: ShoppingCartHandler.remove },
-];
+
+    {
+      method: "GET",
+      path: "/shopping_cart/user/{user_id}",
+      handler: async (request, h) => {
+        try {
+          const rows = await service.getByUser(request.params.user_id);
+          return h.response(rows).code(200);
+        } catch (err) {
+          console.error("ERROR getByUser:", err);
+          return h.response({ message: "Internal server error" }).code(500);
+        }
+      },
+      options: { auth: false }
+    },
+
+    {
+      method: "POST",
+      path: "/shopping_cart",
+      handler: handler.create,
+      options: { auth: false }
+    },
+
+    {
+      method: "PUT",
+      path: "/shopping_cart/{id}",
+      handler: handler.update,
+      options: { auth: false }
+    },
+
+    {
+      method: "DELETE",
+      path: "/shopping_cart/{id}",
+      handler: handler.delete,
+      options: { auth: false }
+    }
+
+  ];
+};
+

@@ -1,19 +1,32 @@
-const db = require('../db');
+module.exports = (service) => ({
 
-const CheckoutHandler = {
-  async getAll(request, h) {
-    const { rows } = await db.query('SELECT * FROM checkout');
-    return h.response(rows);
+  checkout: async (request, h) => {
+    try {
+      const result = await service.checkout(request.payload);
+      return h.response(result).code(200);
+    } catch (err) {
+      return h.response({ error: err.message }).code(400);
+    }
   },
 
-  async create(request, h) {
-    const { user_id, total_amount, payment_id } = request.payload;
-    const { rows } = await db.query(
-      'INSERT INTO checkout (user_id, total_amount, payment_id) VALUES ($1,$2,$3) RETURNING *',
-      [user_id, total_amount, payment_id]
-    );
-    return h.response(rows[0]).code(201);
+  getAll: async (request, h) => {
+    try {
+      const { rows } = await request.server.app.db.query(
+        'SELECT * FROM checkout ORDER BY checkout_id DESC'
+      );
+      return h.response(rows);
+    } catch (err) {
+      return h.response({ error: 'Internal server error' }).code(500);
+    }
   },
-};
 
-module.exports = CheckoutHandler;
+  getByUser: async (request, h) => {
+    try {
+      const { user_id } = request.params;
+      const rows = await service.getAllByUser(user_id);
+      return h.response(rows);
+    } catch (err) {
+      return h.response({ error: err.message }).code(400);
+    }
+  }
+});

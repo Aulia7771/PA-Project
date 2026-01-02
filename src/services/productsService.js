@@ -1,38 +1,62 @@
-const pool = require('../db');
-
-class ProductsService {
-  async getAll() {
-    const res = await pool.query('SELECT * FROM products ORDER BY product_id ASC');
-    return res.rows;
+module.exports = (cache, db) => {
+  if (!db || typeof db.query !== "function") {
+    throw new Error("ProductsService requires db with query()");
   }
 
-  async getById(product_id) {
-    const res = await pool.query('SELECT * FROM products WHERE product_id=$1', [product_id]);
-    return res.rows[0];
-  }
+  return {
 
-  async create({ product_name, description, price, stock }) {
-    const res = await pool.query(
-      `INSERT INTO products (product_name, description, price, stock)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [product_name, description, price, stock]
-    );
-    return res.rows[0];
-  }
+    async getAll() {
+      const { rows } = await db.query(
+        "SELECT * FROM products ORDER BY product_id ASC"
+      );
+      return rows;
+    },
 
-  async update(product_id, { product_name, description, price, stock }) {
-    const res = await pool.query(
-      `UPDATE products
-       SET product_name=$1, description=$2, price=$3, stock=$4
-       WHERE product_id=$5 RETURNING *`,
-      [product_name, description, price, stock, product_id]
-    );
-    return res.rows[0];
-  }
+    async getById(id) {
+      const { rows } = await db.query(
+        "SELECT * FROM products WHERE product_id = $1",
+        [id]
+      );
+      return rows[0] || null;
+    },
 
-  async delete(product_id) {
-    await pool.query('DELETE FROM products WHERE product_id=$1', [product_id]);
-  }
-}
+    async searchProducts({ keyword, min_price, max_price, category }) {
+      let query = `
+        SELECT product_id, product_name, price, stock, category
+        FROM products
+        WHERE 1=1
+      `;
+      const values = [];
+      let i = 1;
 
-module.exports = new ProductsService();
+      if (keyword) {
+        query += ` AND (product_name ILIKE $${i} OR description ILIKE $${i})`;
+        values.push(`%${keyword}%`);
+        i++;
+      }
+
+      if (min_price) {
+        query += ` AND price >= $${i}`;
+        values.push(min_price);
+        i++;
+      }
+
+      if (max_price) {
+        query += ` AND price <= $${i}`;
+        values.push(max_price);
+        i++;
+      }
+
+      if (category) {
+        query += ` AND category = $${i}`;
+        values.push(category);
+        i++;
+      }
+
+      query += " ORDER BY product_id ASC";
+
+      const { rows } = await db.query(query, values);
+      return rows;
+    }
+  };
+};

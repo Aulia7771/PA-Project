@@ -1,10 +1,19 @@
 const Joi = require('joi');
 
-const ProductSchema = Joi.object({
-  product_name: Joi.string().max(100).required(),
-  description: Joi.string().allow(''),
-  price: Joi.number().integer().required(),
-  stock: Joi.number().integer().required(),
-});
+module.exports = {
+  
+  create: Joi.object({
+    name: Joi.string().required(),
+    description: Joi.string().allow(""),
+    price: Joi.number().required(),
+    stock: Joi.number().integer().min(0).required(),
+  }),
 
-module.exports = { ProductSchema };
+  update: Joi.object({
+    name: Joi.string().optional(),
+    description: Joi.string().optional(),
+    price: Joi.number().optional(),
+    stock: Joi.number().integer().min(0).optional(),
+  }).min(1),
+
+};

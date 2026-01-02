@@ -1,43 +1,71 @@
-const db = require('../db');
+module.exports = (service) => ({
 
-const ShoppingCartHandler = {
-  async getAll(request, h) {
-    const { rows } = await db.query('SELECT * FROM shopping_cart');
-    return h.response(rows);
+  // GET /shopping_cart
+  getAll: async (_request, h) => {
+    try {
+      const rows = await service.getAll();
+      return h.response(rows).code(200);
+    } catch (err) {
+      console.error("ERROR getAll:", err);
+      return h.response({ message: "Internal server error" }).code(500);
+    }
   },
 
-  async getById(request, h) {
-    const { id } = request.params;
-    const { rows } = await db.query('SELECT * FROM shopping_cart WHERE id=$1', [id]);
-    if (!rows.length) return h.response({ message: 'Item not found' }).code(404);
-    return h.response(rows[0]);
+  // GET /shopping_cart/{id}
+  getById: async (request, h) => {
+    try {
+      const result = await service.getById(request.params.id);
+      if (!result) {
+        return h.response({ message: "Not found" }).code(404);
+      }
+      return h.response(result).code(200);
+    } catch (err) {
+      console.error("ERROR getById:", err);
+      return h.response({ message: "Internal server error" }).code(500);
+    }
   },
 
-  async create(request, h) {
-    const { user_id, product_id, quantity } = request.payload;
-    const { rows } = await db.query(
-      'INSERT INTO shopping_cart (user_id, product_id, quantity) VALUES ($1, $2, $3) RETURNING *',
-      [user_id, product_id, quantity]
-    );
-    return h.response(rows[0]).code(201);
+  // POST /shopping_cart 
+  create: async (request, h) => {
+    try {
+      const result = await service.add(request.payload);
+      return h.response({
+        status: "success",
+        message: "Berhasil ditambahkan ke shopping cart",
+        data: result
+      }).code(201);
+    } catch (err) {
+      return h.response({
+        status: "fail",
+        message: err.message,
+        stock: err.stock
+      }).code(err.statusCode || 500);
+    }
   },
 
-  async update(request, h) {
-    const { id } = request.params;
-    const { quantity } = request.payload;
-    const { rows } = await db.query(
-      'UPDATE shopping_cart SET quantity=$1 WHERE id=$2 RETURNING *',
-      [quantity, id]
-    );
-    if (!rows.length) return h.response({ message: 'Item not found' }).code(404);
-    return h.response(rows[0]);
+  // PUT /shopping_cart/{id}
+  update: async (request, h) => {
+    try {
+      const result = await service.update(
+        request.params.id,
+        request.payload
+      );
+      return h.response(result).code(200);
+    } catch (err) {
+      console.error("ERROR update:", err);
+      return h.response({ message: "Internal server error" }).code(500);
+    }
   },
 
-  async remove(request, h) {
-    const { id } = request.params;
-    await db.query('DELETE FROM shopping_cart WHERE id=$1', [id]);
-    return h.response({ message: 'Item deleted' });
-  },
-};
+  // DELETE /shopping_cart/{id}
+  delete: async (request, h) => {
+    try {
+      await service.delete(request.params.id);
+      return h.response({ message: "Deleted" }).code(200);
+    } catch (err) {
+      console.error("ERROR delete:", err);
+      return h.response({ message: "Internal server error" }).code(500);
+    }
+  }
 
-module.exports = ShoppingCartHandler;
+});

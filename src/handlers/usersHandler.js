@@ -7,18 +7,28 @@ const saltRounds = 10;
 
 module.exports = {
   register: async (request, h) => {
-    const { name, email, password } = request.payload;
-    try {
-      // check existing
-      const { rows } = await db.query('SELECT id FROM users WHERE email = $1', [email]);
-      if (rows.length) return h.response({ error: 'Email already registered' }).code(400);
+    const { username, email, password, full_name, address, country_code, phone_number } = request.payload;
 
-      const hashed = await bcrypt.hash(password, saltRounds);
-      const result = await db.query(
-        `INSERT INTO users (name, email, password) VALUES ($1,$2,$3) RETURNING id, name, email, created_at`,
-        [name, email, hashed]
+    try {
+      // email unik
+      const exists = await db.query(
+        'SELECT user_id FROM users WHERE email=$1',
+        [email]
       );
+      if (exists.rows.length)
+        return h.response({ error: 'Email already registered' }).code(400);
+
+      const password_hash = await bcrypt.hash(password, saltRounds);
+
+      const result = await db.query(
+        `INSERT INTO users (username, email, password_hash, full_name, address, country_code, phone_number)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)
+         RETURNING user_id, username, email, full_name`,
+        [username, email, password_hash, full_name, address, country_code, phone_number]
+      );
+
       return h.response({ user: result.rows[0] }).code(201);
+
     } catch (err) {
       console.error(err);
       return h.response({ error: 'Internal server error' }).code(500);
@@ -27,16 +37,57 @@ module.exports = {
 
   login: async (request, h) => {
     const { email, password } = request.payload;
+
     try {
-      const { rows } = await db.query('SELECT id, name, email, password FROM users WHERE email = $1', [email]);
-      if (!rows.length) return h.response({ error: 'Invalid credentials' }).code(401);
+      const res = await db.query(
+        'SELECT user_id, username, email, password_hash FROM users WHERE email=$1',
+        [email]
+      );
 
-      const user = rows[0];
-      const match = await bcrypt.compare(password, user.password);
-      if (!match) return h.response({ error: 'Invalid credentials' }).code(401);
+      if (!res.rows.length)
+        return h.response({ error: 'Invalid email or password' }).code(401);
 
-      const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, config.jwtSecret, { expiresIn: '7d' });
-      return h.response({ token, user: { id: user.id, name: user.name, email: user.email } });
+      const user = res.rows[0];
+
+      const match = await bcrypt.compare(password, user.password_hash);
+      if (!match)
+        return h.response({ error: 'Invalid email or password' }).code(401);
+
+      const token = jwt.sign(
+        { user_id: user.user_id, username: user.username, email: user.email },
+        config.jwtSecret,
+        { expiresIn: '7d' }
+      );
+
+      return h.response({
+        token,
+        user: {
+          user_id: user.user_id,
+          username: user.username,
+          email: user.email
+        }
+      });
+
+    } catch (err) {
+      console.error(err);
+      return h.response({ error: 'Internal server error' }).code(500);
+    }
+  },
+
+  getById: async (request, h) => {
+    const { user_id } = request.params;
+
+    try {
+      const res = await db.query(
+        'SELECT user_id, username, email, full_name, address, country_code, phone_number FROM users WHERE user_id=$1',
+        [user_id]
+      );
+
+      if (!res.rows.length)
+        return h.response({ error: 'User not found' }).code(404);
+
+      return h.response(res.rows[0]);
+
     } catch (err) {
       console.error(err);
       return h.response({ error: 'Internal server error' }).code(500);
@@ -44,9 +95,7 @@ module.exports = {
   },
 
   me: async (request, h) => {
-    // request.auth.credentials not populated by our simple validate but token payload is available on request.auth.credentials
-    // hapi-auth-jwt2 puts payload into request.auth.credentials
-    const cred = request.auth.credentials || {};
-    return h.response({ user: cred }).code(200);
-  }
+    const cred = request.auth.credentials;
+    return h.response({ user: cred });
+  },
 };

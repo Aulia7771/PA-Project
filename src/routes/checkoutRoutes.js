@@ -1,18 +1,24 @@
-const db = require('../db');
-const CheckoutHandler = require("../handlers/checkoutHandler");
+module.exports = (service) => {
+  const handler = require('../handlers/checkoutHandler')(service);
 
-module.exports = [
-  // { method: "GET", path: "/checkout", handler: CheckoutHandler.getAll },
-  {
-    method: "GET",
-    path: "/checkout",
-    options: {
-      auth: false,
+  return [
+    {
+      method: 'GET',
+      path: '/checkout',
+      options: { auth: false },
+      handler: handler.getAll
     },
-    handler: async (request, h) => {
-      const res = await db.query("SELECT * FROM checkout");
-      return res.rows;
+    {
+      method: 'GET',
+      path: '/checkout/user/{user_id}',
+      options: { auth: false },
+      handler: handler.getByUser
     },
-  },
-  { method: "POST", path: "/checkout", handler: CheckoutHandler.create },
-];
+    {
+      method: 'POST',
+      path: '/checkout',
+      options: { auth: false },
+      handler: handler.checkout
+    }
+  ];
+};

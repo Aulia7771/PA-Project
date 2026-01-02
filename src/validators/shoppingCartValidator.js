@@ -1,9 +1,11 @@
-const Joi = require('joi');
+const Joi = require("joi");
 
-const ShoppingCartSchema = Joi.object({
-  user_id: Joi.number().integer().required(),
-  product_id: Joi.number().integer().required(),
-  quantity: Joi.number().integer().min(1).default(1),
-});
+const shoppingCartValidator = {
+  payload: Joi.object({
+    user_id: Joi.number().integer().required(),
+    product_id: Joi.number().integer().required(),
+    quantity: Joi.number().integer().min(1).required(),
+  })
+};
 
-module.exports = { ShoppingCartSchema };
+module.exports = { shoppingCartValidator };

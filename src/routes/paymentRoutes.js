@@ -5,19 +5,21 @@ module.exports = [
   {
     method: "GET",
     path: "/payment",
-    options: {
-      auth: false,
-    },
-    handler: async (request, h) => {
-      const res = await db.query("SELECT * FROM payment");
-      return res.rows;
-    },
+    options: { auth: false },
+    handler: PaymentHandler.getAll,
   },
-  // { method: "GET", path: "/payment", handler: PaymentHandler.getAll },
-  { method: "POST", path: "/payment", handler: PaymentHandler.create },
+
+  {
+    method: "POST",
+    path: "/payment",
+    options: { auth: false },
+    handler: PaymentHandler.create,
+  },
+
   {
     method: "PUT",
-    path: "/payment/{id}",
+    path: "/payment/{payment_id}",
+    options: { auth: false },
     handler: PaymentHandler.updateStatus,
   },
 ];

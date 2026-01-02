@@ -5,7 +5,7 @@ module.exports = async () => {
   console.log('Seeding payment...');
   const checkoutRes = await db.query('SELECT checkout_id FROM checkout WHERE status = \'Success\'');
   const checkoutIds = checkoutRes.rows.map(r => r.checkout_id);
-
+                                                                                                                      
   const inserts = [];
   const total = Math.floor(checkoutIds.length * 0.6);
 

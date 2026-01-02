@@ -9,7 +9,5 @@ const pool = new Pool({
   password: config.db.password
 });
 
-module.exports = {
-  query: (text, params) => pool.query(text, params),
-  pool
-};
+module.exports = pool;
+
