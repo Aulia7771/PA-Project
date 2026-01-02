@@ -1,0 +1,26 @@
+# Node
+node_modules/
+
+# Env
+.env
+.env.*
+
+# Cache / Runtime
+dump.rdb
+
+# JMeter
+jmeter.log
+*.jtl
+report_on/
+report_off/
+
+# Valkey / Redis
+valkey/
+valkey.deb
+
+# Logs
+*.log
+
+# Cache
+src/cache/
+
